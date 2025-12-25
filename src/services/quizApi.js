@@ -20,21 +20,34 @@ export const fetchQuiz = async (subject, count) => {
       throw new Error("API returned empty response");
     }
 
+    // Check if data object exists (API wraps response in data property)
+    if (!res.data.data) {
+      throw new Error("API response missing data object");
+    }
+
     // Check if questions array exists and is valid
-    if (!res.data.questions) {
+    if (!res.data.data.questions) {
       throw new Error("API response missing questions data");
     }
 
-    if (!Array.isArray(res.data.questions)) {
+    if (!Array.isArray(res.data.data.questions)) {
       throw new Error("Questions data is not an array");
     }
 
-    if (res.data.questions.length === 0) {
+    if (res.data.data.questions.length === 0) {
       throw new Error("No questions available for the selected subject");
     }
 
+    // Transform API response to expected format
+    const transformedQuestions = res.data.data.questions.map(q => ({
+      question: q.text,
+      options: q.optionOrdering.map(opt => opt.text),
+      correctAnswer: q.questionInfo?.option || "", // Map to correct option if available
+      explanation: q.questionInfo?.solution || ""
+    }));
+
     // Validate each question has required fields
-    const invalidQuestion = res.data.questions.find(
+    const invalidQuestion = transformedQuestions.find(
       (q) => !q.question || !q.options || !Array.isArray(q.options) || q.options.length === 0
     );
 
@@ -43,7 +56,7 @@ export const fetchQuiz = async (subject, count) => {
     }
 
     return {
-      questions: res.data.questions,
+      questions: transformedQuestions,
     };
   } catch (error) {
     // Handle different types of errors
