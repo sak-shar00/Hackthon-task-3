@@ -39,12 +39,18 @@ export const fetchQuiz = async (subject, count) => {
     }
 
     // Transform API response to expected format
-    const transformedQuestions = res.data.data.questions.map(q => ({
-      question: q.text,
-      options: q.optionOrdering.map(opt => opt.text),
-      correctAnswer: q.questionInfo?.option || "", // Map to correct option if available
-      explanation: q.questionInfo?.solution || ""
-    }));
+    const transformedQuestions = res.data.data.questions.map(q => {
+      // Find the correct option text by matching the ID
+      const correctOptionId = q.questionInfo?.option;
+      const correctOption = q.optionOrdering.find(opt => opt._id === correctOptionId);
+      
+      return {
+        question: q.text,
+        options: q.optionOrdering.map(opt => opt.text),
+        correctAnswer: correctOption?.text || "", // Map to correct option text if available
+        explanation: q.questionInfo?.solution || ""
+      };
+    });
 
     // Validate each question has required fields
     const invalidQuestion = transformedQuestions.find(

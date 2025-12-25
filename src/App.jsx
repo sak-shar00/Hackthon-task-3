@@ -33,8 +33,12 @@ const App = () => {
     }
   };
 
-  const finishQuiz = (score, wrong) => {
-    setResult({ score, wrong });
+  const finishQuiz = (score, wrong, statistics = {}) => {
+    setResult({ 
+      score, 
+      wrong, 
+      statistics 
+    });
     setScreen("result");
   };
 
@@ -59,6 +63,7 @@ const App = () => {
           score={result.score}
           wrong={result.wrong}
           total={questions.length}
+          statistics={result.statistics}
           restart={restartQuiz}
         />
       )}

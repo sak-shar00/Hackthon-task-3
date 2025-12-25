@@ -1,16 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const QuestionCard = ({ data, onAnswer }) => {
+const QuestionCard = ({ data, onAnswer, questionIndex }) => {
   const [selected, setSelected] = useState(null);
+  const [isCorrect, setIsCorrect] = useState(null);
 
-  // Defensive check for data
+  // Reset state when question changes
+  useEffect(() => {
+    setSelected(null);
+    setIsCorrect(null);
+  }, [questionIndex]);
+
   if (!data) {
     return <div>Loading question...</div>;
   }
 
   const handleClick = (opt) => {
+    if (selected !== null) return; // Don't allow multiple clicks
+    
     setSelected(opt);
-    onAnswer(opt, () => setSelected(null));
+    const correct = opt === data.correctAnswer;
+    setIsCorrect(correct);
+    
+    // Create reset function
+    const reset = () => {
+      setSelected(null);
+      setIsCorrect(null);
+    };
+    
+    // Call parent callback with all expected parameters
+    onAnswer(opt, correct, 1, reset);
+    
+    // Set timeout to reset the color after showing it
+    setTimeout(() => {
+      reset();
+    }, correct ? 2000 : 1000);
   };
 
   return (
@@ -21,17 +44,48 @@ const QuestionCard = ({ data, onAnswer }) => {
 
       <div className="grid md:grid-cols-2 gap-4">
         {data.options && data.options.length > 0 ? (
-          data.options.map((opt, i) => (
-            <button
-              key={i}
-              onClick={() => handleClick(opt)}
-              className={`border p-3 rounded text-left ${
-                selected === opt ? "bg-indigo-500 text-white" : "hover:bg-gray-100"
-              }`}
-            >
-              {opt}
-            </button>
-          ))
+          data.options.map((opt, i) => {
+            // Determine button style based on selection
+            let buttonStyle = {
+              border: '3px solid #ccc',
+              padding: '20px',
+              borderRadius: '10px',
+              textAlign: 'left',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              fontSize: '18px',
+              backgroundColor: 'white',
+              color: 'black',
+              transition: 'all 0.3s ease'
+            };
+
+            // If this option is selected, apply color
+            if (selected === opt) {
+              if (isCorrect) {
+                // Correct answer - make it GREEN
+                buttonStyle.backgroundColor = 'limegreen';
+                buttonStyle.color = 'white';
+                buttonStyle.border = '4px solid green';
+                buttonStyle.boxShadow = '0 0 20px rgba(0,255,0,0.5)';
+              } else if (isCorrect === false) {
+                // Wrong answer - make it RED
+                buttonStyle.backgroundColor = 'red';
+                buttonStyle.color = 'white';
+                buttonStyle.border = '4px solid darkred';
+                buttonStyle.boxShadow = '0 0 20px rgba(255,0,0,0.5)';
+              }
+            }
+
+            return (
+              <button
+                key={i}
+                onClick={() => handleClick(opt)}
+                style={buttonStyle}
+              >
+                {String.fromCharCode(65 + i)}. {opt}
+              </button>
+            );
+          })
         ) : (
           <div>Loading options...</div>
         )}
